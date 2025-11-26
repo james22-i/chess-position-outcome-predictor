@@ -37,6 +37,40 @@ def moves_for_piece(
     return [m.uci() for m in moves]
 
 
+<<<<<<< HEAD
+=======
+def piece_moves(
+    board: chess.Board,
+    square: str,
+    piece_symbol: str | None = None,
+) -> int:
+    """
+    Count the number of legal moves for the piece on the given square.
+
+    Args:
+        board: python-chess Board instance.
+        square: Algebraic square name like "e4".
+        piece_symbol: Optional expected piece symbol (e.g., "N", "p") to validate.
+
+    Returns:
+        Integer count of legal moves for the piece on the square.
+    """
+    moves = moves_for_piece(board, square, legal_only=True, san=False)
+
+    if piece_symbol is not None:
+        sq = chess.parse_square(square)
+        piece = board.piece_at(sq)
+        if piece is None:
+            raise ValueError(f"No piece on square '{square}'")
+        if piece.symbol() != piece_symbol:
+            raise ValueError(
+                f"Piece mismatch at '{square}': found '{piece.symbol()}', expected '{piece_symbol}'"
+            )
+
+    return len(moves)
+
+
+>>>>>>> 6647404 (filtered dataset and added new variables)
 def square_analysis(
     board: chess.Board,
     square: str,
@@ -99,3 +133,33 @@ def square_analysis(
         "white": _entries(chess.WHITE),
         "black": _entries(chess.BLACK),
     }
+<<<<<<< HEAD
+=======
+
+
+def hanging(board: chess.Board, square: str) -> bool:
+    """
+    Indicator: True if the piece on `square` is attacked and undefended.
+
+    Args:
+        board: python-chess Board instance.
+        square: Algebraic square name like "e4".
+    """
+    try:
+        target_sq = chess.parse_square(square)
+    except ValueError as exc:
+        raise ValueError(f"Invalid square '{square}'") from exc
+
+    piece = board.piece_at(target_sq)
+    if piece is None:
+        raise ValueError(f"No piece on square '{square}'")
+
+    color = piece.color
+    enemy = not color
+
+    # Pseudo-legal attackers/defenders (includes pinned pieces).
+    attackers = board.attackers(enemy, target_sq)
+    defenders = board.attackers(color, target_sq)
+
+    return len(attackers) > 0 and len(defenders) == 0
+>>>>>>> 6647404 (filtered dataset and added new variables)

@@ -25,10 +25,18 @@ def main() -> None:
             print(f"{sq}: empty square")
             continue
 
+<<<<<<< HEAD
         info = protection.piece_protection(board, sq, legal_only=False, include_san=True)
         print(f"\nProtection for {sq} ({info['piece']}):")
         print("  defenders:", info["defenders"])
         print("  defender_count:", info["defender_count"])
+=======
+        attackers = protection.square_attackers(board, sq, include_san=True)
+        defenders = protection.square_defenders(board, sq, include_san=True)
+        print(f"\nFor {sq} ({piece.symbol()}):")
+        print("  attackers:", attackers)
+        print("  defenders:", defenders)
+>>>>>>> 6647404 (filtered dataset and added new variables)
 
 
 if __name__ == "__main__":
