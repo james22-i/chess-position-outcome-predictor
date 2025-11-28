@@ -45,6 +45,7 @@ def position_mobility(board: chess.Board, color: chess.Color | str) -> float:
     """
     color = _normalize_color(color)
     weights = {
+        chess.KING: 0.5,
         chess.BISHOP: 1.5,
         chess.KNIGHT: 1.5,
         chess.ROOK: 1.5,
