@@ -37,8 +37,6 @@ def moves_for_piece(
     return [m.uci() for m in moves]
 
 
-<<<<<<< HEAD
-=======
 def piece_moves(
     board: chess.Board,
     square: str,
@@ -70,7 +68,6 @@ def piece_moves(
     return len(moves)
 
 
->>>>>>> 6647404 (filtered dataset and added new variables)
 def square_analysis(
     board: chess.Board,
     square: str,
@@ -133,8 +130,6 @@ def square_analysis(
         "white": _entries(chess.WHITE),
         "black": _entries(chess.BLACK),
     }
-<<<<<<< HEAD
-=======
 
 
 def hanging(board: chess.Board, square: str) -> bool:
@@ -162,4 +157,3 @@ def hanging(board: chess.Board, square: str) -> bool:
     defenders = board.attackers(color, target_sq)
 
     return len(attackers) > 0 and len(defenders) == 0
->>>>>>> 6647404 (filtered dataset and added new variables)

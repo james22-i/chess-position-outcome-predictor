@@ -24,13 +24,6 @@ print("Attackers/protectors of f1 ->", square_analysis_f1)
 square_analysis_f1_legal = move_utils.square_analysis(board2, "f1", include_san=True, legal_only=True)
 print("Attackers/protectors of f1 (legal only) ->", square_analysis_f1_legal)
 
-<<<<<<< HEAD
-# Protection info for a few squares (defenders only)
-for sq in ["f1", "h8", "e8"]:
-    try:
-        info = protection.piece_protection(board2, sq, legal_only=False, include_san=False)
-        print(f"Protection for {sq} ({info['piece']}): defenders={info['defender_count']}, list={info['defenders']}")
-=======
 # Attackers/defenders for a few squares (legal moves only)
 for sq in ["f1", "h8", "e8"]:
     try:
@@ -40,6 +33,5 @@ for sq in ["f1", "h8", "e8"]:
         print(f"For {sq} ({piece}): attackers={len(attackers)}, defenders={len(defenders)}")
         print("   attacker list:", attackers)
         print("   defender list:", defenders)
->>>>>>> 6647404 (filtered dataset and added new variables)
     except ValueError as exc:
         print(f"{sq}: {exc}")
