@@ -3,27 +3,26 @@ import chess
 from src import move_utils, protection
 
 
-def position_connection(board: chess.Board, color: chess.Color | str) -> int:
-    """
-    Measure how "connected" a side is by summing defender counts for all its pieces.
-
-    Args:
-        board: python-chess Board instance.
-        color: chess.WHITE/chess.BLACK or "white"/"black".
-
-    Returns:
-        Integer sum of how many defenders each piece has (legal defenders only).
-    """
+def _normalize_color(color: chess.Color | str) -> chess.Color:
+    """Accept chess.WHITE/BLACK or 'white'/'black'."""
     if isinstance(color, str):
         normalized = color.lower()
         if normalized == "white":
-            color = chess.WHITE
-        elif normalized == "black":
-            color = chess.BLACK
-        else:
-            raise ValueError("color must be chess.WHITE/chess.BLACK or 'white'/'black'")
-    elif color not in (chess.WHITE, chess.BLACK):
+            return chess.WHITE
+        if normalized == "black":
+            return chess.BLACK
+        raise ValueError("color must be chess.WHITE/chess.BLACK or 'white'/'black'")
+    if color not in (chess.WHITE, chess.BLACK):
         raise ValueError("color must be chess.WHITE or chess.BLACK")
+    return color
+
+
+def position_connection(board: chess.Board, color: chess.Color | str) -> int:
+    """
+    Measure how "connected" a side is by summing defender counts for its pieces.
+    Legal defenders only.
+    """
+    color = _normalize_color(color)
 
     total_defenders = 0
     for sq, piece in board.piece_map().items():
@@ -36,69 +35,84 @@ def position_connection(board: chess.Board, color: chess.Color | str) -> int:
 
 
 #does not yet account for hanging, positive trade and negative trades for potential moves
-def position_mobility(board: chess.Board, color: chess.Color | str) -> int:
+def position_mobility(board: chess.Board, color: chess.Color | str) -> float:
     """
-    Total number of legal moves available to all pieces of a side.
+    Weighted legal moves for a side: bishops/knights/rooks x1.5, queens x2, others x1.
 
     Args:
         board: python-chess Board instance.
         color: chess.WHITE/chess.BLACK or "white"/"black".
     """
-    if isinstance(color, str):
-        normalized = color.lower()
-        if normalized == "white":
-            color = chess.WHITE
-        elif normalized == "black":
-            color = chess.BLACK
-        else:
-            raise ValueError("color must be chess.WHITE/chess.BLACK or 'white'/'black'")
-    elif color not in (chess.WHITE, chess.BLACK):
-        raise ValueError("color must be chess.WHITE or chess.BLACK")
+    color = _normalize_color(color)
+    weights = {
+        chess.BISHOP: 1.5,
+        chess.KNIGHT: 1.5,
+        chess.ROOK: 1.5,
+        chess.QUEEN: 2.0,
+    }
 
-    total_moves = 0
+    total_moves = 0.0
     for sq, piece in board.piece_map().items():
         if piece.color != color:
             continue
-        # piece_moves will raise if the square is empty, so no extra guard needed.
-        total_moves += move_utils.piece_moves(board, chess.square_name(sq))
+        move_count = move_utils.piece_moves(board, chess.square_name(sq))
+        total_moves += move_count * weights.get(piece.piece_type, 1.0)
 
     return total_moves
 
 
-def position_centrality(board: chess.Board) -> dict[str, int]:
+_CENTER_CORE = {chess.D4, chess.E4, chess.D5, chess.E5}
+_CENTER_RING = {
+    chess.C4,
+    chess.F4,
+    chess.C5,
+    chess.F5,
+    chess.D3,
+    chess.E3,
+    chess.D6,
+    chess.E6,
+}
+_CENTER_CORNERS = {
+    chess.C3,
+    chess.F3,
+    chess.C6,
+    chess.F6,
+}
+_CENTRAL_SQUARES = _CENTER_CORE | _CENTER_RING | _CENTER_CORNERS
+
+
+def position_centrality(board: chess.Board, color: chess.Color | str) -> int:
     """
-    Count how many pieces of each side occupy the central 4x4 squares.
+    Score central presence: +2 for core (d4, e4, d5, e5); +1 for surrounding ring.
+    """
+    color = _normalize_color(color)
+
+    count = 0
+    for sq in _CENTRAL_SQUARES:
+        piece = board.piece_at(sq)
+        if piece is None or piece.color != color:
+            continue
+        if sq in _CENTER_CORE:
+            count += 2
+        else:
+            count += 1
+    return count
+
+
+def position_features(board: chess.Board, color: chess.Color | str) -> dict[str, float | int]:
+    """
+    Convenience: return core features for the side to move.
 
     Returns:
-        {"white": count, "black": count}
+        {
+            "connection": int,
+            "mobility": float,
+            "centrality": int,
+        }
     """
-    central_squares = [
-        chess.C4,
-        chess.D4,
-        chess.E4,
-        chess.F4,
-        chess.C5,
-        chess.D5,
-        chess.E5,
-        chess.F5,
-        chess.C3,
-        chess.D3,
-        chess.E3,
-        chess.F3,
-        chess.C6,
-        chess.D6,
-        chess.E6,
-        chess.F6,
-    ]
-
-    counts = {"white": 0, "black": 0}
-    for sq in central_squares:
-        piece = board.piece_at(sq)
-        if piece is None:
-            continue
-        if piece.color == chess.WHITE:
-            counts["white"] += 1
-        else:
-            counts["black"] += 1
-
-    return counts
+    color = _normalize_color(color)
+    return {
+        "connection": position_connection(board, color),
+        "mobility": position_mobility(board, color),
+        "centrality": position_centrality(board, color),
+    }

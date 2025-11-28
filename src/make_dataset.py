@@ -252,6 +252,38 @@ def _write_output(df: pd.DataFrame, output_path: str | pathlib.Path, fmt: str) -
         raise ValueError(f"Unsupported format '{fmt}'")
 
 
+def filter_positions_by_move_range(
+    df: pd.DataFrame,
+    *,
+    min_move_number: int | None = None,
+    max_move_number: int | None = None,
+) -> pd.DataFrame:
+    """
+    Filter a positions DataFrame (e.g., club_positions.csv) by move_number inclusive bounds.
+
+    Args:
+        df: DataFrame containing a 'move_number' column.
+        min_move_number: Keep positions with move_number >= this (if provided).
+        max_move_number: Keep positions with move_number <= this (if provided).
+
+    Returns:
+        Filtered DataFrame.
+    """
+    if "move_number" not in df.columns:
+        raise ValueError("DataFrame must include a 'move_number' column")
+    if min_move_number is not None and max_move_number is not None:
+        if min_move_number > max_move_number:
+            raise ValueError("min_move_number cannot be greater than max_move_number")
+
+    mask = pd.Series([True] * len(df))
+    if min_move_number is not None:
+        mask &= df["move_number"] >= min_move_number
+    if max_move_number is not None:
+        mask &= df["move_number"] <= max_move_number
+
+    return df.loc[mask].copy()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Extract positions from PGN or CSV into a flat dataset.")
     source = parser.add_mutually_exclusive_group(required=True)
