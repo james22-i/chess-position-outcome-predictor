@@ -240,6 +240,26 @@ def load_club_csv_positions(
     return pd.DataFrame(records)
 
 
+def _trim_last_moves(df: pd.DataFrame, trim_last_moves: int) -> pd.DataFrame:
+    """
+    Drop the last N moves (by move_number) for each game.
+
+    Args:
+        df: Positions DataFrame containing 'game_index' and 'move_number'.
+        trim_last_moves: Number of final moves per game to remove.
+    """
+    if trim_last_moves <= 0:
+        return df
+    if "game_index" not in df.columns or "move_number" not in df.columns:
+        raise ValueError("DataFrame must include 'game_index' and 'move_number' columns to trim moves")
+
+    max_move_per_game = df.groupby("game_index")["move_number"].transform("max")
+    cutoff = max_move_per_game - trim_last_moves
+    # keep moves strictly before the last N moves
+    trimmed = df.loc[df["move_number"] <= cutoff].copy()
+    return trimmed
+
+
 def _write_output(df: pd.DataFrame, output_path: str | pathlib.Path, fmt: str) -> None:
     output_path = pathlib.Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -300,6 +320,12 @@ def main() -> None:
         help="Output format (inferred from extension if omitted).",
     )
     parser.add_argument("--max-games", type=int, default=None, help="Optional limit on games to parse.")
+    parser.add_argument(
+        "--trim-last-moves",
+        type=int,
+        default=0,
+        help="Drop the last N moves (by move_number) from each game before writing output.",
+    )
 
     args = parser.parse_args()
 
@@ -317,6 +343,9 @@ def main() -> None:
         df = load_csv_positions(args.csv, max_games=args.max_games)
     else:
         df = load_club_csv_positions(args.club_csv, max_games=args.max_games)
+
+    if args.trim_last_moves > 0:
+        df = _trim_last_moves(df, args.trim_last_moves)
 
     if df.empty:
         raise SystemExit("No positions extracted (empty PGN or zero games parsed).")
